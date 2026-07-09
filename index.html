@@ -1750,7 +1750,7 @@ async function loadPendingDetail() {
       const isDone = p.status === 'resolved';
       return `
       <div class="pending-item ${isDone ? 'resolved' : ''}">
-        <div class="pending-check ${isDone ? 'checked' : ''}" ${isDone ? '' : `onclick="resolvePending('${p.id}')"`}>${isDone ? '✓' : ''}</div>
+        <div class="pending-check ${isDone ? 'checked' : ''}" onclick="${isDone ? `reopenPending('${p.id}')` : `resolvePending('${p.id}')`}">${isDone ? '✓' : ''}</div>
         <div style="flex:1;">
           <div class="pending-item-title" style="font-size:13px;font-weight:600;">${p.title}</div>
           ${p.description ? `<div style="font-size:12px;color:var(--text2);margin-top:2px;">${p.description}</div>` : ''}
@@ -1758,7 +1758,7 @@ async function loadPendingDetail() {
         <span class="pending-responsible ${p.responsible === 'client' ? 'resp-client' : 'resp-agency'}">
           ${p.responsible === 'client' ? 'Cliente' : 'Agência'}
         </span>
-        ${!isDone ? `<button class="resolve-btn" onclick="resolvePending('${p.id}')">Resolver</button>` : ''}
+        ${!isDone ? `<button class="resolve-btn" onclick="resolvePending('${p.id}')">Resolver</button>` : `<button class="resolve-btn" onclick="reopenPending('${p.id}')">Desfazer</button>`}
       </div>`;
     }).join('');
 
@@ -1829,6 +1829,15 @@ async function resolvePending(id) {
   if (error) { showToast('Erro ao resolver', 'error'); return; }
   if (!data || data.length === 0) { showToast('Não foi possível resolver — sem permissão de escrita', 'error'); return; }
   showToast('Pendência resolvida!', 'success');
+  loadPendingDetail();
+  loadBadges();
+}
+
+async function reopenPending(id) {
+  const { data, error } = await db.from('pending_items').update({ status: 'open', resolved_at: null }).eq('id', id).select();
+  if (error) { showToast('Erro ao desfazer', 'error'); return; }
+  if (!data || data.length === 0) { showToast('Não foi possível desfazer — sem permissão de escrita', 'error'); return; }
+  showToast('Pendência reaberta', 'success');
   loadPendingDetail();
   loadBadges();
 }
